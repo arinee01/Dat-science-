@@ -98,7 +98,7 @@ python view_data.py
 ### Просмотр данных SQLite
 ```bash
 cd tests
-python view_sqlite.py
+python view_sqlite.py   
 ```
 
 ### SQL запросы

@@ -246,7 +246,7 @@ class BasicQueryEngine:
         
         try:
             for handler in self._journalQuery:
-                df = handler.getJournalsWithDOASeal()
+                df = handler.getJournalsWithDOAJSeal()
                 for _, row in df.iterrows():
                     journal = self._dataframe_to_journal(row)
                     if journal:
