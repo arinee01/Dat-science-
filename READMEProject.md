@@ -86,7 +86,7 @@ java -server -Xmx1g -jar blazegraph.jar
 ### Запуск тестов
 ```bash
 cd tests
-python -m unittest test -v
+python -m unittest test -vpython
 ```
 
 ### Просмотр данных Blazegraph

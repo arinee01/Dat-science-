@@ -14,7 +14,7 @@ from implementations.query_handlers import JournalQueryHandler
 def view_blazegraph_data():
     """Просматривает данные в Blazegraph"""
     
-    endpoint = "http://localhost:8889/bigdata/sparql"
+    endpoint = "http://localhost:9999/bigdata/sparql"
     
     print("=== Просмотр данных в Blazegraph ===\n")
     

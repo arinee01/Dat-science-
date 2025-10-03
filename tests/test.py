@@ -36,7 +36,7 @@ class TestProjectBasic(unittest.TestCase):
     journal = ".." + sep + "data" + sep + "doaj.csv"
     category = ".." + sep + "data" + sep + "scimago.json"
     relational = ".." + sep + "relational.db"
-    graph = "http://localhost:8889/bigdata/sparql"
+    graph = "http://localhost:9999/bigdata/sparql"
     
     def test_01_JournalUploadHandler(self):
         u = JournalUploadHandler()
