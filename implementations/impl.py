@@ -1,38 +1,38 @@
 # -*- coding: utf-8 -*-
 """
-Главный файл реализации системы анализа научных журналов.
-Содержит импорты всех необходимых классов.
+Main implementation file for the scientific journals analysis system.
+Contains imports of all necessary classes.
 """
 
-# Импорты классов модели данных
+# Data model class imports
 from .models import IdentifiableEntity, Journal, Category, Area
 
-# Импорты базовых обработчиков
+# Base handler imports
 from .handlers import Handler, UploadHandler, QueryHandler
 
-# Импорты обработчиков загрузки
+# Upload handler imports
 from .upload_handlers import JournalUploadHandler, CategoryUploadHandler
 
-# Импорты обработчиков запросов
+# Query handler imports
 from .query_handlers import JournalQueryHandler, CategoryQueryHandler
 
-# Импорты движков запросов
+# Query engine imports
 from .query_engines import BasicQueryEngine, FullQueryEngine
 
-# Экспорт всех классов для использования в test.py
+# Export all classes for use in test.py
 __all__ = [
-    # Модель данных
+    # Data model
     'IdentifiableEntity', 'Journal', 'Category', 'Area',
     
-    # Базовые обработчики
+    # Base handlers
     'Handler', 'UploadHandler', 'QueryHandler',
     
-    # Обработчики загрузки
+    # Upload handlers
     'JournalUploadHandler', 'CategoryUploadHandler',
     
-    # Обработчики запросов
+    # Query handlers
     'JournalQueryHandler', 'CategoryQueryHandler',
     
-    # Движки запросов
+    # Query engines
     'BasicQueryEngine', 'FullQueryEngine'
 ]

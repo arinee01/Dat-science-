@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Обработчики загрузки данных в базы данных.
-Содержит классы: JournalUploadHandler, CategoryUploadHandler
+Upload handlers for importing data into databases.
+Contains classes: JournalUploadHandler, CategoryUploadHandler
 """
 
 import csv
@@ -14,42 +14,42 @@ from .handlers import UploadHandler
 
 class JournalUploadHandler(UploadHandler):
     """
-    Обработчик загрузки журналов из CSV в графовую базу данных Blazegraph.
+    Handler for uploading journals from CSV into a Blazegraph graph database.
     """
     
     def pushDataToDb(self, path: str) -> bool:
         """
-        Загружает данные журналов из CSV файла в Blazegraph.
-        
+        Upload journal data from a CSV file to Blazegraph.
+
         Args:
-            path (str): Путь к CSV файлу
-            
+            path (str): Path to the CSV file
+
         Returns:
-            bool: True если загрузка прошла успешно
+            bool: True if the upload succeeded
         """
         try:
-            # Читаем CSV файл
+            # Read CSV file
             journals_data = self._read_csv_file(path)
             if not journals_data:
-                print(f"Ошибка: не удалось прочитать файл {path}")
+                print(f"Error: failed to read file {path}")
                 return False
             
             # Загружаем данные в Blazegraph
             return self._upload_to_blazegraph(journals_data)
             
         except Exception as e:
-            print(f"Ошибка при загрузке журналов: {e}")
+            print(f"Error while uploading journals: {e}")
             return False
     
     def _read_csv_file(self, path: str) -> List[Dict[str, Any]]:
         """
-        Читает CSV файл с данными журналов.
-        
+        Read a CSV file with journal data.
+
         Args:
-            path (str): Путь к CSV файлу
-            
+            path (str): Path to the CSV file
+
         Returns:
-            List[Dict[str, Any]]: Список словарей с данными журналов
+            List[Dict[str, Any]]: List of dictionaries with journal data
         """
         journals = []
         
@@ -58,7 +58,7 @@ class JournalUploadHandler(UploadHandler):
                 reader = csv.DictReader(file)
                 count = 0
                 for row in reader:
-                    if count >= 100:  # Ограничиваем для тестирования
+                    if count >= 100:  # Limit for testing
                         break
                     journal_data = {
                         'title': row['Journal title'].strip(),
@@ -73,23 +73,23 @@ class JournalUploadHandler(UploadHandler):
                     journals.append(journal_data)
                     count += 1
         except Exception as e:
-            print(f"Ошибка при чтении CSV файла: {e}")
+            print(f"Error while reading CSV file: {e}")
             return []
         
         return journals
     
     def _upload_to_blazegraph(self, journals_data: List[Dict[str, Any]]) -> bool:
         """
-        Загружает данные журналов в Blazegraph.
-        
+        Upload journal data to Blazegraph.
+
         Args:
-            journals_data (List[Dict[str, Any]]): Данные журналов
-            
+            journals_data (List[Dict[str, Any]]): Journal data
+
         Returns:
-            bool: True если загрузка прошла успешно
+            bool: True if the upload succeeded
         """
         try:
-            # Загружаем журналы по одному для избежания ошибок
+            # Upload journals one by one to avoid errors
             success_count = 0
             
             for journal in journals_data:
@@ -104,28 +104,28 @@ class JournalUploadHandler(UploadHandler):
                 if response.status_code == 200:
                     success_count += 1
                 else:
-                    print(f"Ошибка при загрузке журнала {journal.get('issn_print', 'unknown')}: {response.status_code}")
+                    print(f"Error uploading journal {journal.get('issn_print', 'unknown')}: {response.status_code}")
             
             if success_count > 0:
-                print(f"Успешно загружено {success_count} из {len(journals_data)} журналов в Blazegraph")
+                print(f"Successfully uploaded {success_count} of {len(journals_data)} journals to Blazegraph")
                 return True
             else:
-                print("Не удалось загрузить ни одного журнала")
+                print("Failed to upload any journals")
                 return False
                 
         except Exception as e:
-            print(f"Ошибка при загрузке в Blazegraph: {e}")
+            print(f"Error while uploading to Blazegraph: {e}")
             return False
     
     def _build_insert_query(self, journals_data: List[Dict[str, Any]]) -> str:
         """
-        Строит SPARQL INSERT запрос для загрузки журналов.
-        
+        Build a SPARQL INSERT query for uploading journals.
+
         Args:
-            journals_data (List[Dict[str, Any]]): Данные журналов
-            
+            journals_data (List[Dict[str, Any]]): Journal data
+
         Returns:
-            str: SPARQL INSERT запрос
+            str: SPARQL INSERT query
         """
         # Определяем префиксы
         prefixes = """
@@ -139,14 +139,14 @@ class JournalUploadHandler(UploadHandler):
         insert_data = "INSERT DATA {\n"
         
         for journal in journals_data:
-            # Используем ISSN как идентификатор журнала
+            # Use ISSN as the journal identifier
             journal_id = journal['issn_print'] or journal['eissn']
             if not journal_id:
                 continue
                 
             journal_uri = f"<http://doaj.org/journal/{journal_id}>"
             
-            # Добавляем триплеты для журнала
+            # Add triples for the journal
             insert_data += f"    {journal_uri} rdf:type doaj:Journal .\n"
             insert_data += f"    {journal_uri} doaj:title \"{self._escape_string(journal['title'])}\" .\n"
             
@@ -155,18 +155,18 @@ class JournalUploadHandler(UploadHandler):
             if journal['eissn']:
                 insert_data += f"    {journal_uri} doaj:eissn \"{journal['eissn']}\" .\n"
             
-            # Языки
+            # Languages
             for lang in journal['languages']:
                 insert_data += f"    {journal_uri} doaj:language \"{self._escape_string(lang)}\" .\n"
             
-            # Издатель
+            # Publisher
             if journal['publisher']:
                 insert_data += f"    {journal_uri} doaj:publisher \"{self._escape_string(journal['publisher'])}\" .\n"
             
             # DOAJ Seal
             insert_data += f"    {journal_uri} doaj:hasDOAJSeal \"{journal['seal']}\"^^xsd:boolean .\n"
             
-            # Лицензия
+            # Licence
             insert_data += f"    {journal_uri} doaj:licence \"{self._escape_string(journal['licence'])}\" .\n"
             
             # APC
@@ -178,28 +178,28 @@ class JournalUploadHandler(UploadHandler):
     
     def _build_single_journal_query(self, journal: Dict[str, Any]) -> str:
         """
-        Строит SPARQL INSERT запрос для одного журнала.
-        
+        Build a SPARQL INSERT query for a single journal.
+
         Args:
-            journal (Dict[str, Any]): Данные журнала
-            
+            journal (Dict[str, Any]): Journal data
+
         Returns:
-            str: SPARQL INSERT запрос
+            str: SPARQL INSERT query
         """
-        # Определяем префиксы
+    # Define prefixes
         prefixes = """
         PREFIX doaj: <http://doaj.org/>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
         """
         
-        # Используем ISSN как идентификатор журнала
+        # Use ISSN as the journal identifier
         journal_id = journal['issn_print'] or journal['eissn']
         if not journal_id:
             return ""
             
         journal_uri = f"<http://doaj.org/journal/{journal_id}>"
         
-        # Формируем INSERT DATA блок
+    # Build INSERT DATA block
         insert_data = f"INSERT DATA {{\n"
         insert_data += f"    {journal_uri} rdf:type doaj:Journal .\n"
         insert_data += f"    {journal_uri} doaj:title \"{self._escape_string(journal['title'])}\" .\n"
@@ -209,21 +209,21 @@ class JournalUploadHandler(UploadHandler):
         if journal['eissn']:
             insert_data += f"    {journal_uri} doaj:eissn \"{journal['eissn']}\" .\n"
         
-        # Языки
+        # Languages
         for lang in journal['languages']:
             insert_data += f"    {journal_uri} doaj:language \"{self._escape_string(lang)}\" .\n"
         
-        # Издатель
+        # Publisher
         if journal['publisher']:
             insert_data += f"    {journal_uri} doaj:publisher \"{self._escape_string(journal['publisher'])}\" .\n"
         
-        # DOAJ Seal
+    # DOAJ Seal
         insert_data += f"    {journal_uri} doaj:hasDOAJSeal \"{journal['seal']}\" .\n"
         
-        # Лицензия
+    # Licence
         insert_data += f"    {journal_uri} doaj:licence \"{self._escape_string(journal['licence'])}\" .\n"
         
-        # APC
+    # APC
         insert_data += f"    {journal_uri} doaj:hasAPC \"{journal['apc']}\" .\n"
         
         insert_data += "}"
@@ -232,73 +232,73 @@ class JournalUploadHandler(UploadHandler):
     
     def _escape_string(self, text: str) -> str:
         """
-        Экранирует строку для SPARQL запроса.
-        
+        Escape a string for SPARQL queries.
+
         Args:
-            text (str): Исходная строка
-            
+            text (str): Original string
+
         Returns:
-            str: Экранированная строка
+            str: Escaped string
         """
         return text.replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r')
 
 
 class CategoryUploadHandler(UploadHandler):
     """
-    Обработчик загрузки категорий и областей из JSON в реляционную базу данных SQLite.
+    Handler for uploading categories and areas from JSON into a relational SQLite database.
     """
     
     def pushDataToDb(self, path: str) -> bool:
         """
-        Загружает данные категорий и областей из JSON файла в SQLite.
-        
+        Upload categories and areas data from a JSON file into SQLite.
+
         Args:
-            path (str): Путь к JSON файлу
-            
+            path (str): Path to the JSON file
+
         Returns:
-            bool: True если загрузка прошла успешно
+            bool: True if the upload succeeded
         """
         try:
-            # Читаем JSON файл
+            # Read JSON file
             scimago_data = self._read_json_file(path)
             if not scimago_data:
-                print(f"Ошибка: не удалось прочитать файл {path}")
+                print(f"Error: failed to read file {path}")
                 return False
             
             # Создаем таблицы и загружаем данные
             return self._upload_to_sqlite(scimago_data)
             
         except Exception as e:
-            print(f"Ошибка при загрузке категорий: {e}")
+            print(f"Error while uploading categories: {e}")
             return False
     
     def _read_json_file(self, path: str) -> List[Dict[str, Any]]:
         """
-        Читает JSON файл с данными Scimago.
-        
+        Read a JSON file with Scimago data.
+
         Args:
-            path (str): Путь к JSON файлу
-            
+            path (str): Path to the JSON file
+
         Returns:
-            List[Dict[str, Any]]: Список словарей с данными
+            List[Dict[str, Any]]: List of dictionaries with data
         """
         try:
             with open(path, 'r', encoding='utf-8') as file:
                 data = json.load(file)
                 return data
         except Exception as e:
-            print(f"Ошибка при чтении JSON файла: {e}")
+            print(f"Error while reading JSON file: {e}")
             return []
     
     def _upload_to_sqlite(self, scimago_data: List[Dict[str, Any]]) -> bool:
         """
-        Загружает данные в SQLite базу данных.
-        
+        Upload data into the SQLite database.
+
         Args:
-            scimago_data (List[Dict[str, Any]]): Данные Scimago
-            
+            scimago_data (List[Dict[str, Any]]): Scimago data
+
         Returns:
-            bool: True если загрузка прошла успешно
+            bool: True if the upload succeeded
         """
         try:
             conn = sqlite3.connect(self._dbPathOrUrl)
@@ -313,28 +313,28 @@ class CategoryUploadHandler(UploadHandler):
             conn.commit()
             conn.close()
             
-            print(f"Успешно загружены данные в SQLite базу {self._dbPathOrUrl}")
+            print(f"Successfully loaded data into SQLite database {self._dbPathOrUrl}")
             return True
             
         except Exception as e:
-            print(f"Ошибка при загрузке в SQLite: {e}")
+            print(f"Error while uploading to SQLite: {e}")
             return False
     
     def _create_tables(self, cursor) -> None:
         """
-        Создает таблицы в SQLite базе данных.
-        
+        Create tables in the SQLite database.
+
         Args:
-            cursor: Курсор SQLite
+            cursor: SQLite cursor
         """
-        # Таблица областей
+    # Areas table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS areas (
                 id TEXT PRIMARY KEY
             )
         ''')
         
-        # Таблица категорий
+    # Categories table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS categories (
                 id TEXT PRIMARY KEY,
@@ -342,7 +342,7 @@ class CategoryUploadHandler(UploadHandler):
             )
         ''')
         
-        # Таблица связей журнал-категория
+    # Journal-category relation table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS journal_categories (
                 issn TEXT,
@@ -353,7 +353,7 @@ class CategoryUploadHandler(UploadHandler):
             )
         ''')
         
-        # Таблица связей журнал-область
+    # Journal-area relation table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS journal_areas (
                 issn TEXT,
@@ -365,29 +365,29 @@ class CategoryUploadHandler(UploadHandler):
     
     def _insert_data(self, cursor, scimago_data: List[Dict[str, Any]]) -> None:
         """
-        Вставляет данные в таблицы SQLite.
-        
+        Insert data into SQLite tables.
+
         Args:
-            cursor: Курсор SQLite
-            scimago_data (List[Dict[str, Any]]): Данные Scimago
+            cursor: SQLite cursor
+            scimago_data (List[Dict[str, Any]]): Scimago data
         """
         for entry in scimago_data:
             identifiers = entry.get('identifiers', [])
             categories = entry.get('categories', [])
             areas = entry.get('areas', [])
             
-            # Вставляем области
+            # Insert areas
             for area in areas:
                 cursor.execute('INSERT OR IGNORE INTO areas (id) VALUES (?)', (area,))
             
-            # Вставляем категории
+            # Insert categories
             for category in categories:
                 category_id = category.get('id')
                 quartile = category.get('quartile')
                 cursor.execute('INSERT OR IGNORE INTO categories (id, quartile) VALUES (?, ?)', 
                              (category_id, quartile))
             
-            # Вставляем связи журнал-категория
+            # Insert journal-category relations
             for issn in identifiers:
                 for category in categories:
                     category_id = category.get('id')
@@ -395,7 +395,7 @@ class CategoryUploadHandler(UploadHandler):
                     cursor.execute('INSERT OR IGNORE INTO journal_categories (issn, category_id, quartile) VALUES (?, ?, ?)',
                                  (issn, category_id, quartile))
             
-            # Вставляем связи журнал-область
+            # Insert journal-area relations
             for issn in identifiers:
                 for area in areas:
                     cursor.execute('INSERT OR IGNORE INTO journal_areas (issn, area_id) VALUES (?, ?)',

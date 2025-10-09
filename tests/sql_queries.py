@@ -1,56 +1,60 @@
 # -*- coding: utf-8 -*-
 """
-Простой скрипт для выполнения SQL запросов к relational.db
+Simple script to execute SQL queries against relational.db
 """
 
 import sqlite3
 import pandas as pd
+import os
 
 def execute_sql_query(query, description=""):
-    """Выполняет SQL запрос и показывает результат"""
+    """Execute an SQL query against the local relational.db and print results.
+
+    Returns None. Prints a header if `description` is provided.
+    """
     try:
         conn = sqlite3.connect(".." + os.sep + "relational.db")
-        
+
         if description:
             print(f"\n=== {description} ===")
-        
+
         df = pd.read_sql_query(query, conn)
-        
+
         if not df.empty:
-            print(f"Найдено записей: {len(df)}")
+            print(f"Records found: {len(df)}")
             print(df.to_string(index=False))
         else:
-            print("Результат пустой")
-        
+            print("Empty result")
+
         conn.close()
-        
+
     except Exception as e:
-        print(f"Ошибка при выполнении запроса: {e}")
+        print(f"Error executing query: {e}")
 
 def main():
-    """Основная функция с примерами запросов"""
-    
-    print("=== Примеры SQL запросов к relational.db ===\n")
-    
-    # 1. Все области
+    """Main function with example SQL queries."""
+
+    print("=== SQL query examples against relational.db ===\n")
+
+    # 1. All areas
     execute_sql_query(
         "SELECT id FROM areas ORDER BY id",
-        "Все области"
+        "All areas"
     )
-    
-    # 2. Категории с квартилем Q1
+
+    # 2. Categories with quartile Q1
     execute_sql_query(
         "SELECT id, quartile FROM categories WHERE quartile = 'Q1' ORDER BY id LIMIT 10",
-        "Категории с квартилем Q1 (первые 10)"
+        "Categories with quartile Q1 (first 10)"
     )
-    
-    # 3. Статистика по квартилям
+
+    # 3. Quartile statistics
     execute_sql_query(
         "SELECT quartile, COUNT(*) as count FROM categories GROUP BY quartile ORDER BY quartile",
-        "Статистика по квартилям"
+        "Quartile statistics"
     )
-    
-    # 4. Топ-10 категорий по количеству журналов
+
+    # 4. Top-10 categories by number of journals
     execute_sql_query(
         """
         SELECT c.id, c.quartile, COUNT(jc.issn) as journal_count
@@ -60,10 +64,10 @@ def main():
         ORDER BY journal_count DESC
         LIMIT 10
         """,
-        "Топ-10 категорий по количеству журналов"
+        "Top-10 categories by number of journals"
     )
-    
-    # 5. Журналы в определенной категории
+
+    # 5. Journals in a specific category
     execute_sql_query(
         """
         SELECT DISTINCT jc.issn, c.id as category, c.quartile
@@ -72,10 +76,10 @@ def main():
         WHERE c.id = 'Computer Science'
         LIMIT 10
         """,
-        "Журналы в категории 'Computer Science' (первые 10)"
+        "Journals in category 'Computer Science' (first 10)"
     )
-    
-    # 6. Журналы в определенной области
+
+    # 6. Journals in a specific area
     execute_sql_query(
         """
         SELECT DISTINCT ja.issn, a.id as area
@@ -84,10 +88,10 @@ def main():
         WHERE a.id = 'Computer Science'
         LIMIT 10
         """,
-        "Журналы в области 'Computer Science' (первые 10)"
+        "Journals in area 'Computer Science' (first 10)"
     )
-    
-    # 7. Связи журнал-категория-область
+
+    # 7. Journal-category-area relations
     execute_sql_query(
         """
         SELECT jc.issn, c.id as category, c.quartile, a.id as area
@@ -98,7 +102,7 @@ def main():
         WHERE c.id = 'Artificial Intelligence'
         LIMIT 5
         """,
-        "Журналы в категории 'Artificial Intelligence' с областями"
+        "Journals in category 'Artificial Intelligence' with areas"
     )
 
 if __name__ == "__main__":

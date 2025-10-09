@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Обработчики запросов к базам данных.
-Содержит классы: JournalQueryHandler, CategoryQueryHandler
+Query handlers for databases.
+Contains classes: JournalQueryHandler, CategoryQueryHandler
 """
 
 import requests
@@ -14,18 +14,18 @@ from .models import Journal, Category, Area
 
 class JournalQueryHandler(QueryHandler):
     """
-    Обработчик запросов к журналам в графовой базе данных Blazegraph.
+    Handler for journal queries against a Blazegraph graph database.
     """
     
     def getById(self, entity_id: str) -> pd.DataFrame:
         """
-        Возвращает журнал по идентификатору (ISSN).
-        
-        Args:
-            entity_id (str): ISSN журнала
-            
+        Return a journal by identifier (ISSN).
+
+            else:
+                # Build query with area filter
+
         Returns:
-            pd.DataFrame: Данные журнала или пустой DataFrame
+            pd.DataFrame: Journal data or an empty DataFrame
         """
         try:
             sparql_query = f"""
@@ -50,15 +50,15 @@ class JournalQueryHandler(QueryHandler):
             return self._execute_sparql_query(sparql_query)
             
         except Exception as e:
-            print(f"Ошибка при запросе журнала по ID: {e}")
+            print(f"Error while querying journal by ID: {e}")
             return pd.DataFrame()
     
     def getAllJournals(self) -> pd.DataFrame:
         """
-        Возвращает все журналы из базы данных.
-        
+        Return all journals from the database.
+
         Returns:
-            pd.DataFrame: DataFrame со всеми журналами
+            pd.DataFrame: DataFrame with all journals
         """
         try:
             sparql_query = """
@@ -83,18 +83,18 @@ class JournalQueryHandler(QueryHandler):
             return self._execute_sparql_query(sparql_query)
             
         except Exception as e:
-            print(f"Ошибка при получении всех журналов: {e}")
+            print(f"Error while fetching all journals: {e}")
             return pd.DataFrame()
     
     def getJournalsWithTitle(self, partialTitle: str) -> pd.DataFrame:
         """
-        Возвращает журналы с частичным совпадением в названии.
-        
+        Return journals with partial title match.
+
         Args:
-            partialTitle (str): Часть названия для поиска
-            
+            partialTitle (str): Partial title to search for
+
         Returns:
-            pd.DataFrame: DataFrame с найденными журналами
+            pd.DataFrame: DataFrame with found journals
         """
         try:
             sparql_query = f"""
@@ -120,18 +120,18 @@ class JournalQueryHandler(QueryHandler):
             return self._execute_sparql_query(sparql_query)
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов по названию: {e}")
+            print(f"Error while searching journals by title: {e}")
             return pd.DataFrame()
     
     def getJournalsPublishedBy(self, partialName: str) -> pd.DataFrame:
         """
-        Возвращает журналы с частичным совпадением в названии издателя.
-        
+        Return journals with partial publisher name match.
+
         Args:
-            partialName (str): Часть названия издателя для поиска
-            
+            partialName (str): Partial publisher name to search for
+
         Returns:
-            pd.DataFrame: DataFrame с найденными журналами
+            pd.DataFrame: DataFrame with found journals
         """
         try:
             sparql_query = f"""
@@ -157,21 +157,21 @@ class JournalQueryHandler(QueryHandler):
             return self._execute_sparql_query(sparql_query)
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов по издателю: {e}")
+            print(f"Error while searching journals by publisher: {e}")
             return pd.DataFrame()
     
     def getJournalsWithLicense(self, licenses: Set[str]) -> pd.DataFrame:
         """
-        Возвращает журналы с указанными лицензиями.
-        
+        Return journals with specified licenses.
+
         Args:
-            licenses (Set[str]): Множество лицензий для поиска
-            
+            licenses (Set[str]): Set of licenses to search for
+
         Returns:
-            pd.DataFrame: DataFrame с найденными журналами
+            pd.DataFrame: DataFrame with found journals
         """
         try:
-            # Формируем фильтр для лицензий
+            # Build the license filter
             license_filter = " || ".join([f'?licence = "{license}"' for license in licenses])
             
             sparql_query = f"""
@@ -197,15 +197,15 @@ class JournalQueryHandler(QueryHandler):
             return self._execute_sparql_query(sparql_query)
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов по лицензии: {e}")
+            print(f"Error while searching journals by license: {e}")
             return pd.DataFrame()
     
     def getJournalsWithAPC(self) -> pd.DataFrame:
         """
-        Возвращает журналы с Article Processing Charge.
-        
+        Return journals that have Article Processing Charge (APC).
+
         Returns:
-            pd.DataFrame: DataFrame с журналами, имеющими APC
+            pd.DataFrame: DataFrame with journals that have APC
         """
         try:
             sparql_query = """
@@ -231,15 +231,15 @@ class JournalQueryHandler(QueryHandler):
             return self._execute_sparql_query(sparql_query)
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов с APC: {e}")
+            print(f"Error while searching journals with APC: {e}")
             return pd.DataFrame()
     
     def getJournalsWithDOAJSeal(self) -> pd.DataFrame:
         """
-        Возвращает журналы с DOAJ Seal.
-        
+        Return journals that have DOAJ Seal.
+
         Returns:
-            pd.DataFrame: DataFrame с журналами, имеющими DOAJ Seal
+            pd.DataFrame: DataFrame with journals that have DOAJ Seal
         """
         try:
             sparql_query = """
@@ -265,18 +265,18 @@ class JournalQueryHandler(QueryHandler):
             return self._execute_sparql_query(sparql_query)
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов с DOAJ Seal: {e}")
+            print(f"Error while searching journals with DOAJ Seal: {e}")
             return pd.DataFrame()
     
     def _execute_sparql_query(self, sparql_query: str) -> pd.DataFrame:
         """
-        Выполняет SPARQL запрос и возвращает результат как DataFrame.
-        
+        Execute a SPARQL query and return the result as a DataFrame.
+
         Args:
-            sparql_query (str): SPARQL запрос
-            
+            sparql_query (str): SPARQL query
+
         Returns:
-            pd.DataFrame: Результат запроса
+            pd.DataFrame: Query result
         """
         try:
             response = requests.get(
@@ -291,7 +291,7 @@ class JournalQueryHandler(QueryHandler):
                 if not bindings:
                     return pd.DataFrame()
                 
-                # Преобразуем результат в DataFrame
+                # Convert the result to a DataFrame
                 rows = []
                 for binding in bindings:
                     row = {}
@@ -301,33 +301,33 @@ class JournalQueryHandler(QueryHandler):
                 
                 return pd.DataFrame(rows)
             else:
-                print(f"Ошибка SPARQL запроса: {response.status_code}")
+                print(f"SPARQL query error: {response.status_code}")
                 return pd.DataFrame()
                 
         except Exception as e:
-            print(f"Ошибка при выполнении SPARQL запроса: {e}")
+            print(f"Error while executing SPARQL query: {e}")
             return pd.DataFrame()
 
 
 class CategoryQueryHandler(QueryHandler):
     """
-    Обработчик запросов к категориям и областям в реляционной базе данных SQLite.
+    Handler for categories and areas queries in a relational SQLite database.
     """
     
     def getById(self, entity_id: str) -> pd.DataFrame:
         """
-        Возвращает сущность по идентификатору.
-        
+        Return an entity by identifier.
+
         Args:
-            entity_id (str): Идентификатор сущности
-            
+            entity_id (str): Entity identifier
+
         Returns:
-            pd.DataFrame: Данные сущности или пустой DataFrame
+            pd.DataFrame: Entity data or an empty DataFrame
         """
         try:
             conn = sqlite3.connect(self._dbPathOrUrl)
             
-            # Проверяем, является ли это категорией
+            # Check if this is a category
             category_query = "SELECT id, quartile FROM categories WHERE id = ?"
             category_df = pd.read_sql_query(category_query, conn, params=(entity_id,))
             
@@ -335,7 +335,7 @@ class CategoryQueryHandler(QueryHandler):
                 conn.close()
                 return category_df
             
-            # Проверяем, является ли это областью
+            # Check if this is an area
             area_query = "SELECT id FROM areas WHERE id = ?"
             area_df = pd.read_sql_query(area_query, conn, params=(entity_id,))
             
@@ -343,15 +343,15 @@ class CategoryQueryHandler(QueryHandler):
             return area_df
             
         except Exception as e:
-            print(f"Ошибка при запросе сущности по ID: {e}")
+            print(f"Error while querying entity by ID: {e}")
             return pd.DataFrame()
     
     def getAllCategories(self) -> pd.DataFrame:
         """
-        Возвращает все категории из базы данных.
-        
+        Return all categories from the database.
+
         Returns:
-            pd.DataFrame: DataFrame со всеми категориями
+            pd.DataFrame: DataFrame with all categories
         """
         try:
             conn = sqlite3.connect(self._dbPathOrUrl)
@@ -361,15 +361,15 @@ class CategoryQueryHandler(QueryHandler):
             return df
             
         except Exception as e:
-            print(f"Ошибка при получении всех категорий: {e}")
+            print(f"Error while fetching all categories: {e}")
             return pd.DataFrame()
     
     def getAllAreas(self) -> pd.DataFrame:
         """
-        Возвращает все области из базы данных.
-        
+        Return all areas from the database.
+
         Returns:
-            pd.DataFrame: DataFrame со всеми областями
+            pd.DataFrame: DataFrame with all areas
         """
         try:
             conn = sqlite3.connect(self._dbPathOrUrl)
@@ -379,28 +379,28 @@ class CategoryQueryHandler(QueryHandler):
             return df
             
         except Exception as e:
-            print(f"Ошибка при получении всех областей: {e}")
+            print(f"Error while fetching all areas: {e}")
             return pd.DataFrame()
     
     def getCategoriesWithQuartile(self, quartiles: Set[str]) -> pd.DataFrame:
         """
-        Возвращает категории с указанными квартилями.
-        
+        Return categories with specified quartiles.
+
         Args:
-            quartiles (Set[str]): Множество квартилей для поиска
-            
+            quartiles (Set[str]): Set of quartiles to search for
+
         Returns:
-            pd.DataFrame: DataFrame с найденными категориями
+            pd.DataFrame: DataFrame with found categories
         """
         try:
             conn = sqlite3.connect(self._dbPathOrUrl)
             
             if not quartiles:
-                # Если квартили не указаны, возвращаем все категории
+                # If quartiles are not specified, return all categories
                 query = "SELECT DISTINCT id, quartile FROM categories ORDER BY id"
                 df = pd.read_sql_query(query, conn)
             else:
-                # Формируем запрос с фильтром по квартилям
+                # Build query with quartile filter
                 placeholders = ','.join(['?' for _ in quartiles])
                 query = f"SELECT DISTINCT id, quartile FROM categories WHERE quartile IN ({placeholders}) ORDER BY id"
                 df = pd.read_sql_query(query, conn, params=list(quartiles))
@@ -409,24 +409,24 @@ class CategoryQueryHandler(QueryHandler):
             return df
             
         except Exception as e:
-            print(f"Ошибка при поиске категорий по квартилю: {e}")
+            print(f"Error while searching categories by quartile: {e}")
             return pd.DataFrame()
     
     def getCategoriesAssignedToAreas(self, area_ids: Set[str]) -> pd.DataFrame:
         """
-        Возвращает категории, назначенные указанным областям.
-        
+        Return categories assigned to specified areas.
+
         Args:
-            area_ids (Set[str]): Множество идентификаторов областей
-            
+            area_ids (Set[str]): Set of area identifiers
+
         Returns:
-            pd.DataFrame: DataFrame с найденными категориями
+            pd.DataFrame: DataFrame with found categories
         """
         try:
             conn = sqlite3.connect(self._dbPathOrUrl)
             
             if not area_ids:
-                # Если области не указаны, возвращаем все категории
+                # If areas are not specified, return all categories
                 query = """
                 SELECT DISTINCT c.id, c.quartile 
                 FROM categories c 
@@ -434,7 +434,7 @@ class CategoryQueryHandler(QueryHandler):
                 """
                 df = pd.read_sql_query(query, conn)
             else:
-                # Формируем запрос с фильтром по областям
+                # Build query with area filter
                 placeholders = ','.join(['?' for _ in area_ids])
                 query = f"""
                 SELECT DISTINCT c.id, c.quartile 
@@ -450,28 +450,28 @@ class CategoryQueryHandler(QueryHandler):
             return df
             
         except Exception as e:
-            print(f"Ошибка при поиске категорий по областям: {e}")
+            print(f"Error while searching categories by areas: {e}")
             return pd.DataFrame()
     
     def getAreasAssignedToCategories(self, category_ids: Set[str]) -> pd.DataFrame:
         """
-        Возвращает области, назначенные указанным категориям.
-        
+        Return areas assigned to specified categories.
+
         Args:
-            category_ids (Set[str]): Множество идентификаторов категорий
-            
+            category_ids (Set[str]): Set of category identifiers
+
         Returns:
-            pd.DataFrame: DataFrame с найденными областями
+            pd.DataFrame: DataFrame with found areas
         """
         try:
             conn = sqlite3.connect(self._dbPathOrUrl)
             
             if not category_ids:
-                # Если категории не указаны, возвращаем все области
+                # If categories are not specified, return all areas
                 query = "SELECT DISTINCT id FROM areas ORDER BY id"
                 df = pd.read_sql_query(query, conn)
             else:
-                # Формируем запрос с фильтром по категориям
+                # Build query with category filter
                 placeholders = ','.join(['?' for _ in category_ids])
                 query = f"""
                 SELECT DISTINCT a.id 
@@ -487,5 +487,5 @@ class CategoryQueryHandler(QueryHandler):
             return df
             
         except Exception as e:
-            print(f"Ошибка при поиске областей по категориям: {e}")
+            print(f"Error while searching areas by categories: {e}")
             return pd.DataFrame()

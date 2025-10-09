@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Движки запросов для выполнения сложных запросов к базам данных.
-Содержит классы: BasicQueryEngine, FullQueryEngine
+Query engines for performing complex queries against databases.
+Contains classes: BasicQueryEngine, FullQueryEngine
 """
 
 from typing import List, Set, Optional
@@ -11,7 +11,7 @@ from .query_handlers import JournalQueryHandler, CategoryQueryHandler
 
 class BasicQueryEngine:
     """
-    Базовый движок запросов для работы с журналами и категориями.
+    Basic query engine for working with journals and categories.
     """
     
     def __init__(self):
@@ -20,10 +20,10 @@ class BasicQueryEngine:
     
     def cleanJournalHandlers(self) -> bool:
         """
-        Очищает список обработчиков журналов.
-        
+        Clear the list of journal handlers.
+
         Returns:
-            bool: True если очистка прошла успешно
+            bool: True if the clear succeeded
         """
         try:
             self._journalQuery.clear()
@@ -33,10 +33,10 @@ class BasicQueryEngine:
     
     def cleanCategoryHandlers(self) -> bool:
         """
-        Очищает список обработчиков категорий.
-        
+        Clear the list of category handlers.
+
         Returns:
-            bool: True если очистка прошла успешно
+            bool: True if the clear succeeded
         """
         try:
             self._categoryQuery.clear()
@@ -46,13 +46,13 @@ class BasicQueryEngine:
     
     def addJournalHandler(self, handler: JournalQueryHandler) -> bool:
         """
-        Добавляет обработчик журналов.
-        
+        Add a journal handler.
+
         Args:
-            handler (JournalQueryHandler): Обработчик журналов
-            
+            handler (JournalQueryHandler): Journal handler
+
         Returns:
-            bool: True если добавление прошло успешно
+            bool: True if the addition succeeded
         """
         try:
             if handler and handler not in self._journalQuery:
@@ -63,13 +63,13 @@ class BasicQueryEngine:
     
     def addCategoryHandler(self, handler: CategoryQueryHandler) -> bool:
         """
-        Добавляет обработчик категорий.
-        
+        Add a category handler.
+
         Args:
-            handler (CategoryQueryHandler): Обработчик категорий
-            
+            handler (CategoryQueryHandler): Category handler
+
         Returns:
-            bool: True если добавление прошло успешно
+            bool: True if the addition succeeded
         """
         try:
             if handler and handler not in self._categoryQuery:
@@ -80,22 +80,22 @@ class BasicQueryEngine:
     
     def getEntityById(self, entity_id: str) -> Optional[IdentifiableEntity]:
         """
-        Возвращает сущность по идентификатору.
-        
+        Return an entity by identifier.
+
         Args:
-            entity_id (str): Идентификатор сущности
-            
+            entity_id (str): Entity identifier
+
         Returns:
-            IdentifiableEntity or None: Найденная сущность или None
+            IdentifiableEntity or None: Found entity or None
         """
         try:
-            # Ищем в журналах
+            # Search in journals
             for handler in self._journalQuery:
                 df = handler.getById(entity_id)
                 if not df.empty:
                     return self._dataframe_to_journal(df.iloc[0])
             
-            # Ищем в категориях
+            # Search in categories
             for handler in self._categoryQuery:
                 df = handler.getById(entity_id)
                 if not df.empty:
@@ -108,15 +108,15 @@ class BasicQueryEngine:
             return None
             
         except Exception as e:
-            print(f"Ошибка при поиске сущности по ID: {e}")
+            print(f"Error while searching for entity by ID: {e}")
             return None
     
     def getAllJournals(self) -> List[Journal]:
         """
-        Возвращает все журналы.
-        
+        Return all journals.
+
         Returns:
-            List[Journal]: Список всех журналов
+            List[Journal]: List of all journals
         """
         journals = []
         
@@ -131,18 +131,18 @@ class BasicQueryEngine:
             return journals
             
         except Exception as e:
-            print(f"Ошибка при получении всех журналов: {e}")
+            print(f"Error while fetching all journals: {e}")
             return []
     
     def getJournalsWithTitle(self, partialTitle: str) -> List[Journal]:
         """
-        Возвращает журналы с частичным совпадением в названии.
-        
+        Return journals with partial title match.
+
         Args:
-            partialTitle (str): Часть названия для поиска
-            
+            partialTitle (str): Partial title to search for
+
         Returns:
-            List[Journal]: Список найденных журналов
+            List[Journal]: List of found journals
         """
         journals = []
         
@@ -157,18 +157,18 @@ class BasicQueryEngine:
             return journals
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов по названию: {e}")
+            print(f"Error while searching journals by title: {e}")
             return []
     
     def getJournalsPublishedBy(self, partialName: str) -> List[Journal]:
         """
-        Возвращает журналы с частичным совпадением в названии издателя.
-        
+        Return journals with partial publisher name match.
+
         Args:
-            partialName (str): Часть названия издателя для поиска
-            
+            partialName (str): Partial publisher name to search for
+
         Returns:
-            List[Journal]: Список найденных журналов
+            List[Journal]: List of found journals
         """
         journals = []
         
@@ -183,18 +183,18 @@ class BasicQueryEngine:
             return journals
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов по издателю: {e}")
+            print(f"Error while searching journals by publisher: {e}")
             return []
     
     def getJournalsWithLicense(self, licenses: Set[str]) -> List[Journal]:
         """
-        Возвращает журналы с указанными лицензиями.
-        
+        Return journals with specified licenses.
+
         Args:
-            licenses (Set[str]): Множество лицензий для поиска
-            
+            licenses (Set[str]): Set of licenses to search for
+
         Returns:
-            List[Journal]: Список найденных журналов
+            List[Journal]: List of found journals
         """
         journals = []
         
@@ -209,15 +209,15 @@ class BasicQueryEngine:
             return journals
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов по лицензии: {e}")
+            print(f"Error while searching journals by license: {e}")
             return []
     
     def getJournalsWithAPC(self) -> List[Journal]:
         """
-        Возвращает журналы с Article Processing Charge.
-        
+        Return journals that have Article Processing Charge (APC).
+
         Returns:
-            List[Journal]: Список журналов с APC
+            List[Journal]: List of journals with APC
         """
         journals = []
         
@@ -232,15 +232,15 @@ class BasicQueryEngine:
             return journals
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов с APC: {e}")
+            print(f"Error while searching journals with APC: {e}")
             return []
     
     def getJournalsWithDOAJSeal(self) -> List[Journal]:
         """
-        Возвращает журналы с DOAJ Seal.
-        
+        Return journals that have DOAJ Seal.
+
         Returns:
-            List[Journal]: Список журналов с DOAJ Seal
+            List[Journal]: List of journals with DOAJ Seal
         """
         journals = []
         
@@ -255,15 +255,15 @@ class BasicQueryEngine:
             return journals
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов с DOAJ Seal: {e}")
+            print(f"Error while searching journals with DOAJ Seal: {e}")
             return []
     
     def getAllCategories(self) -> List[Category]:
         """
-        Возвращает все категории.
-        
+        Return all categories.
+
         Returns:
-            List[Category]: Список всех категорий
+            List[Category]: List of all categories
         """
         categories = []
         
@@ -278,15 +278,15 @@ class BasicQueryEngine:
             return categories
             
         except Exception as e:
-            print(f"Ошибка при получении всех категорий: {e}")
+            print(f"Error while fetching all categories: {e}")
             return []
     
     def getAllAreas(self) -> List[Area]:
         """
-        Возвращает все области.
-        
+        Return all areas.
+
         Returns:
-            List[Area]: Список всех областей
+            List[Area]: List of all areas
         """
         areas = []
         
@@ -301,18 +301,18 @@ class BasicQueryEngine:
             return areas
             
         except Exception as e:
-            print(f"Ошибка при получении всех областей: {e}")
+            print(f"Error while fetching all areas: {e}")
             return []
     
     def getCategoriesWithQuartile(self, quartiles: Set[str]) -> List[Category]:
         """
-        Возвращает категории с указанными квартилями.
-        
+        Return categories with specified quartiles.
+
         Args:
-            quartiles (Set[str]): Множество квартилей для поиска
-            
+            quartiles (Set[str]): Set of quartiles to search for
+
         Returns:
-            List[Category]: Список найденных категорий
+            List[Category]: List of found categories
         """
         categories = []
         
@@ -327,18 +327,18 @@ class BasicQueryEngine:
             return categories
             
         except Exception as e:
-            print(f"Ошибка при поиске категорий по квартилю: {e}")
+            print(f"Error while searching categories by quartile: {e}")
             return []
     
     def getCategoriesAssignedToAreas(self, area_ids: Set[str]) -> List[Category]:
         """
-        Возвращает категории, назначенные указанным областям.
-        
+        Return categories assigned to the specified areas.
+
         Args:
-            area_ids (Set[str]): Множество идентификаторов областей
-            
+            area_ids (Set[str]): Set of area identifiers
+
         Returns:
-            List[Category]: Список найденных категорий
+            List[Category]: List of found categories
         """
         categories = []
         
@@ -353,18 +353,18 @@ class BasicQueryEngine:
             return categories
             
         except Exception as e:
-            print(f"Ошибка при поиске категорий по областям: {e}")
+            print(f"Error while searching categories by areas: {e}")
             return []
     
     def getAreasAssignedToCategories(self, category_ids: Set[str]) -> List[Area]:
         """
-        Возвращает области, назначенные указанным категориям.
-        
+        Return areas assigned to the specified categories.
+
         Args:
-            category_ids (Set[str]): Множество идентификаторов категорий
-            
+            category_ids (Set[str]): Set of category identifiers
+
         Returns:
-            List[Area]: Список найденных областей
+            List[Area]: List of found areas
         """
         areas = []
         
@@ -379,31 +379,31 @@ class BasicQueryEngine:
             return areas
             
         except Exception as e:
-            print(f"Ошибка при поиске областей по категориям: {e}")
+            print(f"Error while searching areas by categories: {e}")
             return []
     
     def _dataframe_to_journal(self, row) -> Optional[Journal]:
         """
-        Преобразует строку DataFrame в объект Journal.
-        
+        Convert a DataFrame row to a Journal object.
+
         Args:
-            row: Строка DataFrame
-            
+            row: DataFrame row
+
         Returns:
-            Journal or None: Объект журнала или None
+            Journal or None: Journal object or None
         """
         try:
             journal = Journal()
             
-            # Устанавливаем идентификатор (ISSN)
+            # Set identifier (ISSN)
             issn = row.get('issn', '') or row.get('eissn', '')
             if issn:
                 journal.setId(issn)
             
-            # Устанавливаем остальные поля
+            # Set other fields
             journal.setTitle(row.get('title', ''))
             
-            # Языки (могут быть в разных колонках)
+            # Languages (may be in different columns)
             languages = []
             if 'language' in row and row['language']:
                 languages = [row['language']]
@@ -427,18 +427,18 @@ class BasicQueryEngine:
             return journal
             
         except Exception as e:
-            print(f"Ошибка при создании объекта Journal: {e}")
+            print(f"Error while creating Journal object: {e}")
             return None
     
     def _dataframe_to_category(self, row) -> Optional[Category]:
         """
-        Преобразует строку DataFrame в объект Category.
-        
+        Convert a DataFrame row to a Category object.
+
         Args:
-            row: Строка DataFrame
-            
+            row: DataFrame row
+
         Returns:
-            Category or None: Объект категории или None
+            Category or None: Category object or None
         """
         try:
             category = Category()
@@ -447,18 +447,18 @@ class BasicQueryEngine:
             return category
             
         except Exception as e:
-            print(f"Ошибка при создании объекта Category: {e}")
+            print(f"Error while creating Category object: {e}")
             return None
     
     def _dataframe_to_area(self, row) -> Optional[Area]:
         """
-        Преобразует строку DataFrame в объект Area.
-        
+        Convert a DataFrame row to an Area object.
+
         Args:
-            row: Строка DataFrame
-            
+            row: DataFrame row
+
         Returns:
-            Area or None: Объект области или None
+            Area or None: Area object or None
         """
         try:
             area = Area()
@@ -466,42 +466,42 @@ class BasicQueryEngine:
             return area
             
         except Exception as e:
-            print(f"Ошибка при создании объекта Area: {e}")
+            print(f"Error while creating Area object: {e}")
             return None
 
 
 class FullQueryEngine(BasicQueryEngine):
     """
-    Расширенный движок запросов для выполнения сложных mashup запросов.
+    Extended query engine for performing complex mashup queries.
     """
     
     def getJournalsInCategoriesWithQuartile(self, category_ids: Set[str], quartiles: Set[str]) -> List[Journal]:
         """
-        Возвращает журналы в указанных категориях с определенными квартилями.
-        
+        Return journals in specified categories with given quartiles.
+
         Args:
-            category_ids (Set[str]): Множество идентификаторов категорий
-            quartiles (Set[str]): Множество квартилей
-            
+            category_ids (Set[str]): Set of category identifiers
+            quartiles (Set[str]): Set of quartiles
+
         Returns:
-            List[Journal]: Список найденных журналов
+            List[Journal]: List of found journals
         """
         try:
-            # Получаем категории с указанными квартилями
+            # Get categories with specified quartiles
             categories_with_quartile = self.getCategoriesWithQuartile(quartiles)
             
-            # Фильтруем по указанным категориям, если они заданы
+            # Filter by specified categories if provided
             if category_ids:
                 categories_with_quartile = [cat for cat in categories_with_quartile 
                                           if cat.getIds()[0] in category_ids]
             
-            # Получаем ISSN журналов из этих категорий
+            # Get ISSNs of journals from these categories
             journal_issns = set()
             for handler in self._categoryQuery:
                 for category in categories_with_quartile:
                     category_id = category.getIds()[0]
-                    # Здесь нужно получить ISSN журналов для данной категории
-                    # Это требует дополнительного запроса к SQLite
+                    # Here we need to get the ISSNs of journals for this category
+                    # This requires an additional query to SQLite
                     issns = self._get_issns_for_category(handler, category_id)
                     journal_issns.update(issns)
             
@@ -518,32 +518,32 @@ class FullQueryEngine(BasicQueryEngine):
             return journals
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов в категориях с квартилем: {e}")
+            print(f"Error while searching journals in categories with quartile: {e}")
             return []
     
     def getJournalsInAreasWithLicense(self, area_ids: Set[str], licenses: Set[str]) -> List[Journal]:
         """
-        Возвращает журналы в указанных областях с определенными лицензиями.
-        
+        Return journals in specified areas with given licenses.
+
         Args:
-            area_ids (Set[str]): Множество идентификаторов областей
-            licenses (Set[str]): Множество лицензий
-            
+            area_ids (Set[str]): Set of area identifiers
+            licenses (Set[str]): Set of licenses
+
         Returns:
-            List[Journal]: Список найденных журналов
+            List[Journal]: List of found journals
         """
         try:
-            # Получаем журналы с указанными лицензиями
+            # Get journals with specified licenses
             journals_with_license = self.getJournalsWithLicense(licenses)
             
-            # Получаем ISSN журналов в указанных областях
+            # Get ISSNs of journals in specified areas
             journal_issns_in_areas = set()
             for handler in self._categoryQuery:
                 for area_id in area_ids:
                     issns = self._get_issns_for_area(handler, area_id)
                     journal_issns_in_areas.update(issns)
             
-            # Фильтруем журналы по областям
+            # Filter journals by areas
             filtered_journals = []
             for journal in journals_with_license:
                 journal_issn = journal.getIds()[0] if journal.getIds() else None
@@ -553,39 +553,39 @@ class FullQueryEngine(BasicQueryEngine):
             return filtered_journals
             
         except Exception as e:
-            print(f"Ошибка при поиске журналов в областях с лицензией: {e}")
+            print(f"Error while searching journals in areas with license: {e}")
             return []
     
     def getDiamondJournalsInAreasAndCategoriesWithQuartile(self, area_ids: Set[str], 
                                                           category_ids: Set[str], 
                                                           quartiles: Set[str]) -> List[Journal]:
         """
-        Возвращает "алмазные" журналы (без APC) в указанных областях и категориях с определенными квартилями.
-        
+        Return diamond journals (no APC) in specified areas and categories with given quartiles.
+
         Args:
-            area_ids (Set[str]): Множество идентификаторов областей
-            category_ids (Set[str]): Множество идентификаторов категорий
-            quartiles (Set[str]): Множество квартилей
-            
+            area_ids (Set[str]): Set of area identifiers
+            category_ids (Set[str]): Set of category identifiers
+            quartiles (Set[str]): Set of quartiles
+
         Returns:
-            List[Journal]: Список найденных журналов
+            List[Journal]: List of found journals
         """
         try:
-            # Получаем журналы без APC
+            # Get journals without APC
             journals_without_apc = []
             all_journals = self.getAllJournals()
             for journal in all_journals:
                 if not journal.hasAPC():
                     journals_without_apc.append(journal)
             
-            # Получаем ISSN журналов в указанных областях
+            # Get ISSNs of journals in specified areas
             journal_issns_in_areas = set()
             for handler in self._categoryQuery:
                 for area_id in area_ids:
                     issns = self._get_issns_for_area(handler, area_id)
                     journal_issns_in_areas.update(issns)
             
-            # Получаем ISSN журналов в указанных категориях с квартилями
+            # Get ISSNs of journals in specified categories with quartiles
             journal_issns_in_categories = set()
             categories_with_quartile = self.getCategoriesWithQuartile(quartiles)
             if category_ids:
@@ -598,7 +598,7 @@ class FullQueryEngine(BasicQueryEngine):
                     issns = self._get_issns_for_category(handler, category_id)
                     journal_issns_in_categories.update(issns)
             
-            # Фильтруем журналы
+            # Filter journals
             filtered_journals = []
             for journal in journals_without_apc:
                 journal_issn = journal.getIds()[0] if journal.getIds() else None
@@ -610,19 +610,19 @@ class FullQueryEngine(BasicQueryEngine):
             return filtered_journals
             
         except Exception as e:
-            print(f"Ошибка при поиске алмазных журналов: {e}")
+            print(f"Error while searching for diamond journals: {e}")
             return []
     
     def _get_issns_for_category(self, handler: CategoryQueryHandler, category_id: str) -> Set[str]:
         """
-        Получает ISSN журналов для указанной категории.
-        
+        Get ISSNs of journals for the specified category.
+
         Args:
-            handler (CategoryQueryHandler): Обработчик категорий
-            category_id (str): Идентификатор категории
-            
+            handler (CategoryQueryHandler): Category handler
+            category_id (str): Category identifier
+
         Returns:
-            Set[str]: Множество ISSN журналов
+            Set[str]: Set of journal ISSNs
         """
         try:
             import sqlite3
@@ -637,14 +637,14 @@ class FullQueryEngine(BasicQueryEngine):
     
     def _get_issns_for_area(self, handler: CategoryQueryHandler, area_id: str) -> Set[str]:
         """
-        Получает ISSN журналов для указанной области.
-        
+        Get ISSNs of journals for the specified area.
+
         Args:
-            handler (CategoryQueryHandler): Обработчик категорий
-            area_id (str): Идентификатор области
-            
+            handler (CategoryQueryHandler): Category handler
+            area_id (str): Area identifier
+
         Returns:
-            Set[str]: Множество ISSN журналов
+            Set[str]: Set of journal ISSNs
         """
         try:
             import sqlite3

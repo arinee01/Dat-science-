@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Базовые классы обработчиков для работы с базами данных.
-Содержит классы: Handler, UploadHandler, QueryHandler
+Base handler classes for working with databases.
+Contains classes: Handler, UploadHandler, QueryHandler
 """
 
 from abc import ABC, abstractmethod
@@ -10,7 +10,7 @@ from typing import Optional
 
 class Handler:
     """
-    Базовый класс для работы с базами данных.
+    Base class for working with databases.
     """
     
     def __init__(self):
@@ -18,22 +18,22 @@ class Handler:
     
     def getDbPathOrUrl(self) -> str:
         """
-        Возвращает путь или URL базы данных.
-        
+        Return the database path or URL.
+
         Returns:
-            str: Путь или URL базы данных
+            str: Database path or URL
         """
         return self._dbPathOrUrl
     
     def setDbPathOrUrl(self, pathOrUrl: str) -> bool:
         """
-        Устанавливает путь или URL базы данных.
-        
+        Set the database path or URL.
+
         Args:
-            pathOrUrl (str): Путь или URL базы данных
-            
+            pathOrUrl (str): Database path or URL
+
         Returns:
-            bool: True если установка прошла успешно
+            bool: True if the assignment succeeded
         """
         try:
             self._dbPathOrUrl = pathOrUrl
@@ -44,38 +44,38 @@ class Handler:
 
 class UploadHandler(Handler):
     """
-    Абстрактный класс для загрузки данных в базу данных.
+    Abstract class for uploading data to a database.
     """
     
     @abstractmethod
     def pushDataToDb(self, path: str) -> bool:
         """
-        Загружает данные из файла в базу данных.
-        
+        Upload data from a file to the database.
+
         Args:
-            path (str): Путь к файлу с данными
-            
+            path (str): Path to the data file
+
         Returns:
-            bool: True если загрузка прошла успешно
+            bool: True if upload succeeded
         """
         pass
 
 
 class QueryHandler(Handler):
     """
-    Базовый класс для выполнения запросов к базе данных.
+    Base class for executing queries against a database.
     """
     
     def getById(self, entity_id: str):
         """
-        Возвращает сущность по идентификатору.
-        
+        Return an entity by identifier.
+
         Args:
-            entity_id (str): Идентификатор сущности
-            
+            entity_id (str): Entity identifier
+
         Returns:
-            DataFrame: Данные сущности или пустой DataFrame
+            DataFrame: Entity data or an empty DataFrame
         """
-        # Базовая реализация - должна быть переопределена в подклассах
+        # Default implementation - should be overridden in subclasses
         from pandas import DataFrame
         return DataFrame()
