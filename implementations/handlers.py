@@ -13,8 +13,11 @@ class Handler:
     Base class for working with databases.
     """
     
-    def __init__(self):
-        self._dbPathOrUrl: str = ""
+    def __init__(
+        self, dbPathOrUrl: str = ""
+    ):  # ДОБАВЛЯЕМ ПАРАМЕТР ДЛЯ ТЕСТОВ И ТД И ЧТОБЫ ЛЕГЧЕ ВЫЗЫВАТЬ БД ЧЕРЕЗ handler = JournalQueryHandler("http://example.com/sparql")
+        self._dbPathOrUrl: str = dbPathOrUrl
+
     
     def getDbPathOrUrl(self) -> str:
         """
