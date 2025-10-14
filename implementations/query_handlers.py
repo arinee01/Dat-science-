@@ -8,8 +8,8 @@ import requests
 import sqlite3
 import pandas as pd
 from typing import List, Set, Optional
-from .handlers import QueryHandler
-from .models import Journal, Category, Area
+from handlers import QueryHandler
+from models import Journal, Category, Area
 
 
 class JournalQueryHandler(QueryHandler):
