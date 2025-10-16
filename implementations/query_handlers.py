@@ -16,6 +16,21 @@ class JournalQueryHandler(QueryHandler):
     """
     Handler for journal queries against a Blazegraph graph database.
     """
+
+    def _escape_literal(self, value: str) -> str:
+        """
+        Escape a Python string so that it can be safely injected inside double quotes
+        of a SPARQL literal.
+        """
+        if value is None:
+            return ""
+        return (
+            str(value)
+            .replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+        )
     
     def getById(self, entity_id: str) -> pd.DataFrame:
         """
@@ -28,6 +43,7 @@ class JournalQueryHandler(QueryHandler):
             pd.DataFrame: Journal data or an empty DataFrame
         """
         try:
+            escaped_id = self._escape_literal(entity_id)
             sparql_query = f"""
             PREFIX doaj: <http://doaj.org/>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -35,7 +51,7 @@ class JournalQueryHandler(QueryHandler):
             SELECT ?journal ?title ?issn ?eissn ?language ?publisher ?seal ?licence ?apc
             WHERE {{
                 ?journal rdf:type doaj:Journal .
-                ?journal doaj:issn "{entity_id}" .
+                ?journal doaj:issn "{escaped_id}" .
                 ?journal doaj:title ?title .
                 OPTIONAL {{ ?journal doaj:issn ?issn }}
                 OPTIONAL {{ ?journal doaj:eissn ?eissn }}
@@ -97,6 +113,7 @@ class JournalQueryHandler(QueryHandler):
             pd.DataFrame: DataFrame with found journals
         """
         try:
+            value = self._escape_literal(partialTitle)
             sparql_query = f"""
             PREFIX doaj: <http://doaj.org/>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -105,7 +122,7 @@ class JournalQueryHandler(QueryHandler):
             WHERE {{
                 ?journal rdf:type doaj:Journal .
                 ?journal doaj:title ?title .
-                FILTER (CONTAINS(LCASE(?title), LCASE("{partialTitle}")))
+                FILTER (CONTAINS(LCASE(?title), LCASE("{value}")))
                 OPTIONAL {{ ?journal doaj:issn ?issn }}
                 OPTIONAL {{ ?journal doaj:eissn ?eissn }}
                 OPTIONAL {{ ?journal doaj:language ?language }}
@@ -134,6 +151,7 @@ class JournalQueryHandler(QueryHandler):
             pd.DataFrame: DataFrame with found journals
         """
         try:
+            value = self._escape_literal(partialName)
             sparql_query = f"""
             PREFIX doaj: <http://doaj.org/>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -143,7 +161,7 @@ class JournalQueryHandler(QueryHandler):
                 ?journal rdf:type doaj:Journal .
                 ?journal doaj:title ?title .
                 ?journal doaj:publisher ?publisher .
-                FILTER (CONTAINS(LCASE(?publisher), LCASE("{partialName}")))
+                FILTER (CONTAINS(LCASE(?publisher), LCASE("{value}")))
                 OPTIONAL {{ ?journal doaj:issn ?issn }}
                 OPTIONAL {{ ?journal doaj:eissn ?eissn }}
                 OPTIONAL {{ ?journal doaj:language ?language }}
@@ -171,8 +189,17 @@ class JournalQueryHandler(QueryHandler):
             pd.DataFrame: DataFrame with found journals
         """
         try:
+            if not licenses:
+                return self.getAllJournals()
             # Build the license filter
-            license_filter = " || ".join([f'?licence = "{license}"' for license in licenses])
+            escaped_licenses = [
+                f'"{self._escape_literal(license)}"' for license in licenses if license
+            ]
+            if not escaped_licenses:
+                return pd.DataFrame()
+            license_filter = " || ".join(
+                [f'?licence = {licence}' for licence in escaped_licenses]
+            )
             
             sparql_query = f"""
             PREFIX doaj: <http://doaj.org/>
@@ -211,6 +238,7 @@ class JournalQueryHandler(QueryHandler):
             sparql_query = """
             PREFIX doaj: <http://doaj.org/>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
             
             SELECT ?journal ?title ?issn ?eissn ?language ?publisher ?seal ?licence ?apc
             WHERE {
@@ -245,6 +273,7 @@ class JournalQueryHandler(QueryHandler):
             sparql_query = """
             PREFIX doaj: <http://doaj.org/>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
             
             SELECT ?journal ?title ?issn ?eissn ?language ?publisher ?seal ?licence ?apc
             WHERE {
@@ -268,6 +297,44 @@ class JournalQueryHandler(QueryHandler):
             print(f"Error while searching journals with DOAJ Seal: {e}")
             return pd.DataFrame()
     
+    def getJournalsByIssns(self, issns: Set[str]) -> pd.DataFrame:
+        """
+        Return journals that match any of the provided ISSNs or EISSNs.
+        """
+        cleaned_ids = {issn for issn in issns if issn}
+        if not cleaned_ids:
+            return pd.DataFrame()
+
+        values_clause = " ".join(
+            f'"{self._escape_literal(issn)}"' for issn in sorted(cleaned_ids)
+        )
+        try:
+            sparql_query = f"""
+            PREFIX doaj: <http://doaj.org/>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            
+            SELECT ?journal ?title ?issn ?eissn ?language ?publisher ?seal ?licence ?apc
+            WHERE {{
+                VALUES ?targetId {{ {values_clause} }}
+                ?journal rdf:type doaj:Journal .
+                ?journal doaj:title ?title .
+                OPTIONAL {{ ?journal doaj:issn ?issn }}
+                OPTIONAL {{ ?journal doaj:eissn ?eissn }}
+                OPTIONAL {{ ?journal doaj:language ?language }}
+                OPTIONAL {{ ?journal doaj:publisher ?publisher }}
+                OPTIONAL {{ ?journal doaj:hasDOAJSeal ?seal }}
+                OPTIONAL {{ ?journal doaj:licence ?licence }}
+                OPTIONAL {{ ?journal doaj:hasAPC ?apc }}
+                BIND(COALESCE(?issn, ?eissn) AS ?anyId)
+                FILTER (?anyId IN ({values_clause}))
+            }}
+            ORDER BY ?title
+            """
+            return self._execute_sparql_query(sparql_query)
+        except Exception as e:
+            print(f"Error while searching journals by ISSNs: {e}")
+            return pd.DataFrame()
+
     def _execute_sparql_query(self, sparql_query: str) -> pd.DataFrame:
         """
         Execute a SPARQL query and return the result as a DataFrame.

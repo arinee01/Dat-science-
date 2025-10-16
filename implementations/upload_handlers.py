@@ -28,13 +28,13 @@ class JournalUploadHandler(UploadHandler):
             bool: True if the upload succeeded
         """
         try:
-            # Read CSV file
+            # Read the CSV file
             journals_data = self._read_csv_file(path)
             if not journals_data:
                 print(f"Error: failed to read file {path}")
                 return False
             
-            # Загружаем данные в Blazegraph
+            # Upload data to Blazegraph
             return self._upload_to_blazegraph(journals_data)
             
         except Exception as e:
@@ -56,22 +56,18 @@ class JournalUploadHandler(UploadHandler):
         try:
             with open(path, 'r', encoding='utf-8') as file:
                 reader = csv.DictReader(file)
-                count = 0
                 for row in reader:
-                    if count >= 100:  # Limit for testing
-                        break
                     journal_data = {
                         'title': row['Journal title'].strip(),
                         'issn_print': row['Journal ISSN (print version)'].strip(),
                         'eissn': row['Journal EISSN (online version)'].strip(),
-                        'languages': [lang.strip() for lang in row['Languages in which the journal accepts manuscripts'].split(', ')],
+                        'languages': [lang.strip() for lang in row['Languages in which the journal accepts manuscripts'].split(', ') if lang.strip()],
                         'publisher': row['Publisher'].strip() if row['Publisher'].strip() else None,
                         'seal': row['DOAJ Seal'].strip().lower() == 'yes',
                         'licence': row['Journal license'].strip(),
                         'apc': row['APC'].strip().lower() == 'yes'
                     }
                     journals.append(journal_data)
-                    count += 1
         except Exception as e:
             print(f"Error while reading CSV file: {e}")
             return []
@@ -89,11 +85,16 @@ class JournalUploadHandler(UploadHandler):
             bool: True if the upload succeeded
         """
         try:
-            # Upload journals one by one to avoid errors
-            success_count = 0
+            if not journals_data:
+                print("No data to upload to Blazegraph")
+                return False
             
-            for journal in journals_data:
-                sparql_query = self._build_single_journal_query(journal)
+            total_records = len(journals_data)
+            uploaded_records = 0
+            batch_size = 200
+            
+            for batch in self._chunked(journals_data, batch_size):
+                sparql_query = self._build_insert_query(batch)
                 
                 response = requests.post(
                     self._dbPathOrUrl,
@@ -102,17 +103,21 @@ class JournalUploadHandler(UploadHandler):
                 )
                 
                 if response.status_code == 200:
-                    success_count += 1
+                    uploaded_records += len(batch)
                 else:
-                    print(f"Error uploading journal {journal.get('issn_print', 'unknown')}: {response.status_code}")
+                    sample_issn = batch[0].get('issn_print') or batch[0].get('eissn') or 'unknown'
+                    print(f"Error while uploading journal batch (sample ISSN {sample_issn}): {response.status_code}")
             
-            if success_count > 0:
-                print(f"Successfully uploaded {success_count} of {len(journals_data)} journals to Blazegraph")
+            if uploaded_records == total_records:
+                print(f"Successfully uploaded {uploaded_records} of {total_records} journals to Blazegraph")
                 return True
+            
+            if uploaded_records > 0:
+                print(f"Partially uploaded {uploaded_records} of {total_records} journals")
             else:
                 print("Failed to upload any journals")
-                return False
-                
+            return False
+            
         except Exception as e:
             print(f"Error while uploading to Blazegraph: {e}")
             return False
@@ -127,7 +132,7 @@ class JournalUploadHandler(UploadHandler):
         Returns:
             str: SPARQL INSERT query
         """
-        # Определяем префиксы
+        # Define prefixes
         prefixes = """
         PREFIX doaj: <http://doaj.org/>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -135,7 +140,7 @@ class JournalUploadHandler(UploadHandler):
         PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
         """
         
-        # Формируем INSERT DATA блок
+        # Build INSERT DATA block
         insert_data = "INSERT DATA {\n"
         
         for journal in journals_data:
@@ -164,13 +169,13 @@ class JournalUploadHandler(UploadHandler):
                 insert_data += f"    {journal_uri} doaj:publisher \"{self._escape_string(journal['publisher'])}\" .\n"
             
             # DOAJ Seal
-            insert_data += f"    {journal_uri} doaj:hasDOAJSeal \"{journal['seal']}\"^^xsd:boolean .\n"
+            insert_data += f"    {journal_uri} doaj:hasDOAJSeal \"{self._bool_literal(journal['seal'])}\"^^xsd:boolean .\n"
             
             # Licence
             insert_data += f"    {journal_uri} doaj:licence \"{self._escape_string(journal['licence'])}\" .\n"
             
             # APC
-            insert_data += f"    {journal_uri} doaj:hasAPC \"{journal['apc']}\"^^xsd:boolean .\n"
+            insert_data += f"    {journal_uri} doaj:hasAPC \"{self._bool_literal(journal['apc'])}\"^^xsd:boolean .\n"
         
         insert_data += "}"
         
@@ -186,10 +191,11 @@ class JournalUploadHandler(UploadHandler):
         Returns:
             str: SPARQL INSERT query
         """
-    # Define prefixes
+        # Define prefixes
         prefixes = """
         PREFIX doaj: <http://doaj.org/>
         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+        PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
         """
         
         # Use ISSN as the journal identifier
@@ -199,7 +205,7 @@ class JournalUploadHandler(UploadHandler):
             
         journal_uri = f"<http://doaj.org/journal/{journal_id}>"
         
-    # Build INSERT DATA block
+        # Build INSERT DATA block
         insert_data = f"INSERT DATA {{\n"
         insert_data += f"    {journal_uri} rdf:type doaj:Journal .\n"
         insert_data += f"    {journal_uri} doaj:title \"{self._escape_string(journal['title'])}\" .\n"
@@ -217,14 +223,14 @@ class JournalUploadHandler(UploadHandler):
         if journal['publisher']:
             insert_data += f"    {journal_uri} doaj:publisher \"{self._escape_string(journal['publisher'])}\" .\n"
         
-    # DOAJ Seal
-        insert_data += f"    {journal_uri} doaj:hasDOAJSeal \"{journal['seal']}\" .\n"
+        # DOAJ Seal
+        insert_data += f"    {journal_uri} doaj:hasDOAJSeal \"{self._bool_literal(journal['seal'])}\"^^xsd:boolean .\n"
         
-    # Licence
+        # Licence
         insert_data += f"    {journal_uri} doaj:licence \"{self._escape_string(journal['licence'])}\" .\n"
         
-    # APC
-        insert_data += f"    {journal_uri} doaj:hasAPC \"{journal['apc']}\" .\n"
+        # APC
+        insert_data += f"    {journal_uri} doaj:hasAPC \"{self._bool_literal(journal['apc'])}\"^^xsd:boolean .\n"
         
         insert_data += "}"
         
@@ -240,7 +246,28 @@ class JournalUploadHandler(UploadHandler):
         Returns:
             str: Escaped string
         """
-        return text.replace('"', '\\"').replace('\n', '\\n').replace('\r', '\\r')
+        return (
+            text.replace('\\', '\\\\')
+            .replace('"', '\\"')
+            .replace('\n', '\\n')
+            .replace('\r', '\\r')
+        )
+
+    def _bool_literal(self, value: bool) -> str:
+        """Return a lowercase boolean literal for SPARQL."""
+        return "true" if bool(value) else "false"
+    
+    @staticmethod
+    def _chunked(items: List[Dict[str, Any]], size: int):
+        """Split a list of dictionaries into batches of the specified size."""
+        batch: List[Dict[str, Any]] = []
+        for item in items:
+            batch.append(item)
+            if len(batch) == size:
+                yield batch
+                batch = []
+        if batch:
+            yield batch
 
 
 class CategoryUploadHandler(UploadHandler):
@@ -259,13 +286,13 @@ class CategoryUploadHandler(UploadHandler):
             bool: True if the upload succeeded
         """
         try:
-            # Read JSON file
+            # Read the JSON file
             scimago_data = self._read_json_file(path)
             if not scimago_data:
                 print(f"Error: failed to read file {path}")
                 return False
             
-            # Создаем таблицы и загружаем данные
+            # Create tables and insert data
             return self._upload_to_sqlite(scimago_data)
             
         except Exception as e:
@@ -304,10 +331,10 @@ class CategoryUploadHandler(UploadHandler):
             conn = sqlite3.connect(self._dbPathOrUrl)
             cursor = conn.cursor()
             
-            # Создаем таблицы
+            # Create tables
             self._create_tables(cursor)
             
-            # Загружаем данные
+            # Insert data
             self._insert_data(cursor, scimago_data)
             
             conn.commit()
@@ -327,14 +354,14 @@ class CategoryUploadHandler(UploadHandler):
         Args:
             cursor: SQLite cursor
         """
-    # Areas table
+        # Areas table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS areas (
                 id TEXT PRIMARY KEY
             )
         ''')
         
-    # Categories table
+        # Categories table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS categories (
                 id TEXT PRIMARY KEY,
@@ -342,7 +369,7 @@ class CategoryUploadHandler(UploadHandler):
             )
         ''')
         
-    # Journal-category relation table
+        # Journal-category relation table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS journal_categories (
                 issn TEXT,
@@ -353,7 +380,7 @@ class CategoryUploadHandler(UploadHandler):
             )
         ''')
         
-    # Journal-area relation table
+        # Journal-area relation table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS journal_areas (
                 issn TEXT,
@@ -365,7 +392,7 @@ class CategoryUploadHandler(UploadHandler):
     
     def _insert_data(self, cursor, scimago_data: List[Dict[str, Any]]) -> None:
         """
-        Insert data into SQLite tables.
+        Insert data into the SQLite tables.
 
         Args:
             cursor: SQLite cursor

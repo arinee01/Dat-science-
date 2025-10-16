@@ -4,7 +4,8 @@ Query engines for performing complex queries against databases.
 Contains classes: BasicQueryEngine, FullQueryEngine
 """
 
-from typing import List, Set, Optional
+import math
+from typing import Dict, Iterable, List, Set, Optional
 from .models import Journal, Category, Area, IdentifiableEntity
 from .query_handlers import JournalQueryHandler, CategoryQueryHandler
 
@@ -118,17 +119,14 @@ class BasicQueryEngine:
         Returns:
             List[Journal]: List of all journals
         """
-        journals = []
+        journal_map: Dict[str, Journal] = {}
         
         try:
             for handler in self._journalQuery:
                 df = handler.getAllJournals()
-                for _, row in df.iterrows():
-                    journal = self._dataframe_to_journal(row)
-                    if journal:
-                        journals.append(journal)
+                self._collect_journals(df, journal_map)
             
-            return journals
+            return list(journal_map.values())
             
         except Exception as e:
             print(f"Error while fetching all journals: {e}")
@@ -144,17 +142,14 @@ class BasicQueryEngine:
         Returns:
             List[Journal]: List of found journals
         """
-        journals = []
+        journal_map: Dict[str, Journal] = {}
         
         try:
             for handler in self._journalQuery:
                 df = handler.getJournalsWithTitle(partialTitle)
-                for _, row in df.iterrows():
-                    journal = self._dataframe_to_journal(row)
-                    if journal:
-                        journals.append(journal)
+                self._collect_journals(df, journal_map)
             
-            return journals
+            return list(journal_map.values())
             
         except Exception as e:
             print(f"Error while searching journals by title: {e}")
@@ -170,17 +165,14 @@ class BasicQueryEngine:
         Returns:
             List[Journal]: List of found journals
         """
-        journals = []
+        journal_map: Dict[str, Journal] = {}
         
         try:
             for handler in self._journalQuery:
                 df = handler.getJournalsPublishedBy(partialName)
-                for _, row in df.iterrows():
-                    journal = self._dataframe_to_journal(row)
-                    if journal:
-                        journals.append(journal)
+                self._collect_journals(df, journal_map)
             
-            return journals
+            return list(journal_map.values())
             
         except Exception as e:
             print(f"Error while searching journals by publisher: {e}")
@@ -196,17 +188,14 @@ class BasicQueryEngine:
         Returns:
             List[Journal]: List of found journals
         """
-        journals = []
+        journal_map: Dict[str, Journal] = {}
         
         try:
             for handler in self._journalQuery:
                 df = handler.getJournalsWithLicense(licenses)
-                for _, row in df.iterrows():
-                    journal = self._dataframe_to_journal(row)
-                    if journal:
-                        journals.append(journal)
+                self._collect_journals(df, journal_map)
             
-            return journals
+            return list(journal_map.values())
             
         except Exception as e:
             print(f"Error while searching journals by license: {e}")
@@ -219,17 +208,14 @@ class BasicQueryEngine:
         Returns:
             List[Journal]: List of journals with APC
         """
-        journals = []
+        journal_map: Dict[str, Journal] = {}
         
         try:
             for handler in self._journalQuery:
                 df = handler.getJournalsWithAPC()
-                for _, row in df.iterrows():
-                    journal = self._dataframe_to_journal(row)
-                    if journal:
-                        journals.append(journal)
+                self._collect_journals(df, journal_map)
             
-            return journals
+            return list(journal_map.values())
             
         except Exception as e:
             print(f"Error while searching journals with APC: {e}")
@@ -242,17 +228,14 @@ class BasicQueryEngine:
         Returns:
             List[Journal]: List of journals with DOAJ Seal
         """
-        journals = []
+        journal_map: Dict[str, Journal] = {}
         
         try:
             for handler in self._journalQuery:
                 df = handler.getJournalsWithDOAJSeal()
-                for _, row in df.iterrows():
-                    journal = self._dataframe_to_journal(row)
-                    if journal:
-                        journals.append(journal)
+                self._collect_journals(df, journal_map)
             
-            return journals
+            return list(journal_map.values())
             
         except Exception as e:
             print(f"Error while searching journals with DOAJ Seal: {e}")
@@ -265,17 +248,14 @@ class BasicQueryEngine:
         Returns:
             List[Category]: List of all categories
         """
-        categories = []
+        category_map: Dict[str, Category] = {}
         
         try:
             for handler in self._categoryQuery:
                 df = handler.getAllCategories()
-                for _, row in df.iterrows():
-                    category = self._dataframe_to_category(row)
-                    if category:
-                        categories.append(category)
+                self._collect_categories(df, category_map)
             
-            return categories
+            return list(category_map.values())
             
         except Exception as e:
             print(f"Error while fetching all categories: {e}")
@@ -288,17 +268,14 @@ class BasicQueryEngine:
         Returns:
             List[Area]: List of all areas
         """
-        areas = []
+        area_map: Dict[str, Area] = {}
         
         try:
             for handler in self._categoryQuery:
                 df = handler.getAllAreas()
-                for _, row in df.iterrows():
-                    area = self._dataframe_to_area(row)
-                    if area:
-                        areas.append(area)
+                self._collect_areas(df, area_map)
             
-            return areas
+            return list(area_map.values())
             
         except Exception as e:
             print(f"Error while fetching all areas: {e}")
@@ -314,17 +291,14 @@ class BasicQueryEngine:
         Returns:
             List[Category]: List of found categories
         """
-        categories = []
+        category_map: Dict[str, Category] = {}
         
         try:
             for handler in self._categoryQuery:
                 df = handler.getCategoriesWithQuartile(quartiles)
-                for _, row in df.iterrows():
-                    category = self._dataframe_to_category(row)
-                    if category:
-                        categories.append(category)
+                self._collect_categories(df, category_map)
             
-            return categories
+            return list(category_map.values())
             
         except Exception as e:
             print(f"Error while searching categories by quartile: {e}")
@@ -340,17 +314,14 @@ class BasicQueryEngine:
         Returns:
             List[Category]: List of found categories
         """
-        categories = []
+        category_map: Dict[str, Category] = {}
         
         try:
             for handler in self._categoryQuery:
                 df = handler.getCategoriesAssignedToAreas(area_ids)
-                for _, row in df.iterrows():
-                    category = self._dataframe_to_category(row)
-                    if category:
-                        categories.append(category)
+                self._collect_categories(df, category_map)
             
-            return categories
+            return list(category_map.values())
             
         except Exception as e:
             print(f"Error while searching categories by areas: {e}")
@@ -366,21 +337,141 @@ class BasicQueryEngine:
         Returns:
             List[Area]: List of found areas
         """
-        areas = []
+        area_map: Dict[str, Area] = {}
         
         try:
             for handler in self._categoryQuery:
                 df = handler.getAreasAssignedToCategories(category_ids)
-                for _, row in df.iterrows():
-                    area = self._dataframe_to_area(row)
-                    if area:
-                        areas.append(area)
+                self._collect_areas(df, area_map)
             
-            return areas
+            return list(area_map.values())
             
         except Exception as e:
             print(f"Error while searching areas by categories: {e}")
             return []
+
+    def _collect_journals(self, df, target: Dict[str, Journal]) -> None:
+        """Merge journal rows into a deduplicated dictionary keyed by identifier."""
+        if df is None or df.empty:
+            return
+        for idx, row in df.iterrows():
+            key = self._get_journal_key(row, idx)
+            if not key:
+                continue
+            if key in target:
+                self._update_journal_from_row(target[key], row)
+            else:
+                journal = self._dataframe_to_journal(row)
+                if journal:
+                    target[key] = journal
+
+    def _collect_categories(self, df, target: Dict[str, Category]) -> None:
+        """Collect categories without duplicates."""
+        if df is None or df.empty:
+            return
+        for idx, row in df.iterrows():
+            category = self._dataframe_to_category(row)
+            if not category:
+                continue
+            identifier = category.getIds()[0] if category.getIds() else f"__row_{idx}"
+            if identifier in target:
+                existing = target[identifier]
+                if not existing.getQuartile() and category.getQuartile():
+                    existing.setQuartile(category.getQuartile())
+            else:
+                target[identifier] = category
+
+    def _collect_areas(self, df, target: Dict[str, Area]) -> None:
+        """Collect areas without duplicates."""
+        if df is None or df.empty:
+            return
+        for idx, row in df.iterrows():
+            area = self._dataframe_to_area(row)
+            if not area:
+                continue
+            identifier = area.getIds()[0] if area.getIds() else f"__row_{idx}"
+            if identifier not in target:
+                target[identifier] = area
+
+    def _fetch_journals_by_issns(self, issns: Set[str]) -> List[Journal]:
+        """Fetch journals in batches by ISSN using the registered handlers."""
+        cleaned_ids = sorted({issn for issn in issns if issn})
+        if not cleaned_ids:
+            return []
+        journal_map: Dict[str, Journal] = {}
+        for handler in self._journalQuery:
+            for chunk in self._chunked(cleaned_ids, 50):
+                df = handler.getJournalsByIssns(set(chunk))
+                self._collect_journals(df, journal_map)
+        return list(journal_map.values())
+
+    def _chunked(self, items: Iterable[str], size: int) -> Iterable[List[str]]:
+        """Yield chunks of the input iterable with at most `size` elements."""
+        batch: List[str] = []
+        for item in items:
+            batch.append(item)
+            if len(batch) == size:
+                yield batch
+                batch = []
+        if batch:
+            yield batch
+
+    def _get_journal_key(self, row, idx: int) -> Optional[str]:
+        """Return a stable key for a journal row."""
+        for candidate in ('issn', 'eissn', 'journal'):
+            if candidate in row:
+                value = row.get(candidate)
+                if self._has_value(value):
+                    return str(value).strip()
+        return f"__row_{idx}"
+
+    def _update_journal_from_row(self, journal: Journal, row) -> None:
+        """Merge row data into an existing journal instance."""
+        if self._has_value(row.get('title')) and not journal.getTitle():
+            journal.setTitle(str(row.get('title')).strip())
+
+        language = row.get('language')
+        if self._has_value(language):
+            languages = journal.getLanguages()
+            lang_value = str(language).strip()
+            if lang_value not in languages:
+                languages.append(lang_value)
+                journal.setLanguages(languages)
+
+        if self._has_value(row.get('publisher')) and not journal.getPublisher():
+            journal.setPublisher(str(row.get('publisher')).strip())
+
+        seal_value = row.get('seal')
+        if self._has_value(seal_value):
+            journal.setSeal(self._to_bool(seal_value))
+
+        licence_value = row.get('licence')
+        if self._has_value(licence_value) and not journal.getLicence():
+            journal.setLicence(str(licence_value).strip())
+
+        apc_value = row.get('apc')
+        if self._has_value(apc_value):
+            journal.setAPC(self._to_bool(apc_value))
+
+    @staticmethod
+    def _has_value(value) -> bool:
+        """Return True if the value is meaningful (not None/empty/nan)."""
+        if value is None:
+            return False
+        if isinstance(value, float) and math.isnan(value):
+            return False
+        if isinstance(value, str) and not value.strip():
+            return False
+        return True
+
+    @staticmethod
+    def _to_bool(value) -> bool:
+        """Convert a mixed value into a boolean."""
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() in {'1', 'true', 'yes'}
+        return bool(value)
     
     def _dataframe_to_journal(self, row) -> Optional[Journal]:
         """
@@ -396,33 +487,34 @@ class BasicQueryEngine:
             journal = Journal()
             
             # Set identifier (ISSN)
-            issn = row.get('issn', '') or row.get('eissn', '')
-            if issn:
-                journal.setId(issn)
+            issn = row.get('issn') if 'issn' in row else None
+            if not self._has_value(issn):
+                issn = row.get('eissn') if 'eissn' in row else None
+            if self._has_value(issn):
+                journal.setId(str(issn).strip())
             
             # Set other fields
-            journal.setTitle(row.get('title', ''))
+            title_value = row.get('title')
+            journal.setTitle(str(title_value).strip() if self._has_value(title_value) else "")
             
             # Languages (may be in different columns)
-            languages = []
-            if 'language' in row and row['language']:
-                languages = [row['language']]
+            language_value = row.get('language') if 'language' in row else None
+            languages: List[str] = []
+            if self._has_value(language_value):
+                languages = [str(language_value).strip()]
             journal.setLanguages(languages)
             
-            journal.setPublisher(row.get('publisher'))
-            seal_value = row.get('seal', 'false')
-            if isinstance(seal_value, str):
-                journal.setSeal(seal_value.lower() == 'true')
-            else:
-                journal.setSeal(bool(seal_value))
+            publisher_value = row.get('publisher')
+            journal.setPublisher(str(publisher_value).strip() if self._has_value(publisher_value) else None)
             
-            journal.setLicence(row.get('licence', ''))
+            seal_value = row.get('seal')
+            journal.setSeal(self._to_bool(seal_value) if self._has_value(seal_value) else False)
             
-            apc_value = row.get('apc', 'false')
-            if isinstance(apc_value, str):
-                journal.setAPC(apc_value.lower() == 'true')
-            else:
-                journal.setAPC(bool(apc_value))
+            licence_value = row.get('licence')
+            journal.setLicence(str(licence_value).strip() if self._has_value(licence_value) else "")
+            
+            apc_value = row.get('apc')
+            journal.setAPC(self._to_bool(apc_value) if self._has_value(apc_value) else False)
             
             return journal
             
@@ -442,8 +534,10 @@ class BasicQueryEngine:
         """
         try:
             category = Category()
-            category.setId(row.get('id', ''))
-            category.setQuartile(row.get('quartile'))
+            identifier = row.get('id')
+            category.setId(str(identifier).strip() if self._has_value(identifier) else "")
+            quartile = row.get('quartile')
+            category.setQuartile(str(quartile).strip() if self._has_value(quartile) else None)
             return category
             
         except Exception as e:
@@ -462,7 +556,8 @@ class BasicQueryEngine:
         """
         try:
             area = Area()
-            area.setId(row.get('id', ''))
+            identifier = row.get('id')
+            area.setId(str(identifier).strip() if self._has_value(identifier) else "")
             return area
             
         except Exception as e:
@@ -489,33 +584,28 @@ class FullQueryEngine(BasicQueryEngine):
         try:
             # Get categories with specified quartiles
             categories_with_quartile = self.getCategoriesWithQuartile(quartiles)
+            if not categories_with_quartile and quartiles:
+                return []
             
             # Filter by specified categories if provided
             if category_ids:
                 categories_with_quartile = [cat for cat in categories_with_quartile 
                                           if cat.getIds()[0] in category_ids]
+                if not categories_with_quartile:
+                    return []
+            
+            if not categories_with_quartile:
+                return []
             
             # Get ISSNs of journals from these categories
-            journal_issns = set()
+            journal_issns: Set[str] = set()
             for handler in self._categoryQuery:
                 for category in categories_with_quartile:
                     category_id = category.getIds()[0]
-                    # Here we need to get the ISSNs of journals for this category
-                    # This requires an additional query to SQLite
                     issns = self._get_issns_for_category(handler, category_id)
                     journal_issns.update(issns)
             
-            # Получаем журналы по ISSN
-            journals = []
-            for handler in self._journalQuery:
-                for issn in journal_issns:
-                    df = handler.getById(issn)
-                    if not df.empty:
-                        journal = self._dataframe_to_journal(df.iloc[0])
-                        if journal:
-                            journals.append(journal)
-            
-            return journals
+            return self._fetch_journals_by_issns(journal_issns)
             
         except Exception as e:
             print(f"Error while searching journals in categories with quartile: {e}")
@@ -537,20 +627,26 @@ class FullQueryEngine(BasicQueryEngine):
             journals_with_license = self.getJournalsWithLicense(licenses)
             
             # Get ISSNs of journals in specified areas
-            journal_issns_in_areas = set()
-            for handler in self._categoryQuery:
-                for area_id in area_ids:
-                    issns = self._get_issns_for_area(handler, area_id)
-                    journal_issns_in_areas.update(issns)
+            journal_issns_in_areas: Optional[Set[str]] = set()
+            if area_ids:
+                for handler in self._categoryQuery:
+                    for area_id in area_ids:
+                        issns = self._get_issns_for_area(handler, area_id)
+                        journal_issns_in_areas.update(issns)
+            else:
+                journal_issns_in_areas = None
             
-            # Filter journals by areas
-            filtered_journals = []
+            # Filter journals by areas if needed
+            if journal_issns_in_areas is None:
+                return journals_with_license
+            
+            filtered: Dict[str, Journal] = {}
             for journal in journals_with_license:
                 journal_issn = journal.getIds()[0] if journal.getIds() else None
                 if journal_issn and journal_issn in journal_issns_in_areas:
-                    filtered_journals.append(journal)
+                    filtered[journal_issn] = journal
             
-            return filtered_journals
+            return list(filtered.values())
             
         except Exception as e:
             print(f"Error while searching journals in areas with license: {e}")
@@ -572,42 +668,51 @@ class FullQueryEngine(BasicQueryEngine):
         """
         try:
             # Get journals without APC
-            journals_without_apc = []
-            all_journals = self.getAllJournals()
-            for journal in all_journals:
-                if not journal.hasAPC():
-                    journals_without_apc.append(journal)
+            journals_without_apc = [journal for journal in self.getAllJournals() if not journal.hasAPC()]
             
             # Get ISSNs of journals in specified areas
-            journal_issns_in_areas = set()
-            for handler in self._categoryQuery:
-                for area_id in area_ids:
-                    issns = self._get_issns_for_area(handler, area_id)
-                    journal_issns_in_areas.update(issns)
+            journal_issns_in_areas: Optional[Set[str]] = set()
+            if area_ids:
+                for handler in self._categoryQuery:
+                    for area_id in area_ids:
+                        issns = self._get_issns_for_area(handler, area_id)
+                        journal_issns_in_areas.update(issns)
+            else:
+                journal_issns_in_areas = None
             
             # Get ISSNs of journals in specified categories with quartiles
-            journal_issns_in_categories = set()
+            journal_issns_in_categories: Optional[Set[str]] = set()
             categories_with_quartile = self.getCategoriesWithQuartile(quartiles)
+            if not categories_with_quartile and quartiles:
+                return []
             if category_ids:
                 categories_with_quartile = [cat for cat in categories_with_quartile 
                                           if cat.getIds()[0] in category_ids]
+                if not categories_with_quartile:
+                    return []
             
-            for handler in self._categoryQuery:
-                for category in categories_with_quartile:
-                    category_id = category.getIds()[0]
-                    issns = self._get_issns_for_category(handler, category_id)
-                    journal_issns_in_categories.update(issns)
+            if categories_with_quartile:
+                for handler in self._categoryQuery:
+                    for category in categories_with_quartile:
+                        category_id = category.getIds()[0]
+                        issns = self._get_issns_for_category(handler, category_id)
+                        journal_issns_in_categories.update(issns)
+            else:
+                journal_issns_in_categories = None
             
             # Filter journals
-            filtered_journals = []
+            filtered: Dict[str, Journal] = {}
             for journal in journals_without_apc:
                 journal_issn = journal.getIds()[0] if journal.getIds() else None
-                if (journal_issn and 
-                    journal_issn in journal_issns_in_areas and 
-                    journal_issn in journal_issns_in_categories):
-                    filtered_journals.append(journal)
+                if not journal_issn:
+                    continue
+                if journal_issns_in_areas is not None and journal_issn not in journal_issns_in_areas:
+                    continue
+                if journal_issns_in_categories is not None and journal_issn not in journal_issns_in_categories:
+                    continue
+                filtered[journal_issn] = journal
             
-            return filtered_journals
+            return list(filtered.values())
             
         except Exception as e:
             print(f"Error while searching for diamond journals: {e}")

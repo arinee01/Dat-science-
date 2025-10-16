@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Main implementation file for the scientific journals analysis system.
+Main implementation module for the scientific journals analysis system.
 Contains imports of all necessary classes.
 """
 
